@@ -6,13 +6,13 @@ import scala.annotation.tailrec
 @State(Scope.Benchmark)
 class StackRunner {
   def even(i: Int): Boolean = i match {
-    case 0     => true
-    case other => odd(i - 1)
+    case 0 => true
+    case _ => odd(i - 1)
   }
 
   def odd(i: Int): Boolean = i match {
-    case 0     => false
-    case other => even(i - 1)
+    case 0 => false
+    case _ => even(i - 1)
   }
 
   @Benchmark
@@ -29,13 +29,13 @@ class SpecializedTrampolineRunner {
   case class Odd(value: Int) extends EvenOdd
 
   def even(i: Int): EvenOdd = i match {
-    case 0     => Done(true)
-    case other => Odd(i - 1)
+    case 0 => Done(true)
+    case _ => Odd(i - 1)
   }
 
   def odd(i: Int): EvenOdd = i match {
-    case 0     => Done(false)
-    case other => Even(i - 1)
+    case 0 => Done(false)
+    case _ => Even(i - 1)
   }
 
   // Using Scala's self recursive tail call optimization
@@ -56,13 +56,13 @@ class ScalaTrampolineRunner {
   import scala.util.control.TailCalls.{ TailRec, done, tailcall }
 
   def even(i: Int): TailRec[Boolean] = i match {
-    case 0     => done(true)
-    case other => tailcall(odd(other - 1))
+    case 0 => done(true)
+    case _ => tailcall(odd(i - 1))
   }
 
   def odd(i: Int): TailRec[Boolean] = i match {
-    case 0     => done(false)
-    case other => tailcall(even(other - 1))
+    case 0 => done(false)
+    case _ => tailcall(even(i - 1))
   }
 
   @Benchmark
@@ -82,13 +82,13 @@ class GeneralTrampolineRunner {
   @inline def cont[A](r: => Computation[A]) = Continue(() => r)
 
   def even(i: Int): Computation[Boolean] = i match {
-    case 0     => done(true)
-    case other => cont(odd(i - 1))
+    case 0 => done(true)
+    case _ => cont(odd(i - 1))
   }
 
   def odd(i: Int): Computation[Boolean] = i match {
-    case 0     => done(false)
-    case other => cont(even(i - 1))
+    case 0 => done(false)
+    case _ => cont(even(i - 1))
   }
 
   @tailrec
@@ -110,13 +110,13 @@ class CatsTrampoline {
   import cats.free.Trampoline
 
   def even(i: Int): Trampoline[Boolean] = i match {
-    case 0     => Trampoline.done(true)
-    case other => Trampoline.suspend(odd(i - 1))
+    case 0 => Trampoline.done(true)
+    case _ => Trampoline.suspend(odd(i - 1))
   }
 
   def odd(i: Int): Trampoline[Boolean] = i match {
-    case 0     => Trampoline.done(true)
-    case other => Trampoline.suspend(even(i - 1))
+    case 0 => Trampoline.done(true)
+    case _ => Trampoline.suspend(even(i - 1))
   }
 
   @Benchmark
@@ -136,13 +136,13 @@ class ExceptionTrampolines {
   @inline def cont[A](next: => A): A = throw new Continue(() => next)
 
   def even(i: Int): Boolean = i match {
-    case 0     => true
-    case other => cont(odd(i - 1))
+    case 0 => true
+    case _ => cont(odd(i - 1))
   }
 
   def odd(i: Int): Boolean = i match {
-    case 0     => false
-    case other => cont(even(i - 1))
+    case 0 => false
+    case _ => cont(even(i - 1))
   }
 
   @tailrec
