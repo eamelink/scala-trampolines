@@ -123,7 +123,6 @@ class CatsTrampoline {
   def bench() =
     if (even(3000).run) "Yeah" else "Neh"
 
-
 }
 
 @State(Scope.Benchmark)
@@ -155,4 +154,52 @@ class ExceptionTrampolines {
   @Benchmark
   def bench() =
     if (run(even(3000))) "Yeah" else "Neh"
+}
+
+@State(Scope.Benchmark)
+class BatchedTrampolines {
+
+  val MaxDepth = 6000
+
+  sealed trait Cont
+  case class Done(r: Boolean) extends Cont
+  case class Even(i: Int, d: Int) extends Cont
+  case class Odd(i: Int, d: Int) extends Cont
+
+  def even(i: Int, depth: Int): Cont =
+    i match {
+      case 0 =>
+        Done(true)
+      case _ =>
+        if (depth >= MaxDepth)
+          Odd(i - 1, depth + 1)
+        else
+          odd(i - 1, depth + 1)
+    }
+
+  def odd(i: Int, depth: Int): Cont =
+    i match {
+      case 0 =>
+        Done(false)
+      case _ =>
+        if (depth >= MaxDepth)
+          Even(i - 1, depth + 1)
+        else
+          even(i - 1, depth + 1)
+    }
+
+  def run[T](c: => Cont): Boolean = {
+    var curr = c
+    while (!curr.isInstanceOf[Done])
+      curr = curr match {
+        case _: Done => curr
+        case e: Even => even(e.i, e.d)
+        case o: Odd  => odd(o.i, o.d)
+      }
+    curr.asInstanceOf[Done].r
+  }
+
+  @Benchmark
+  def bench() =
+    if (run(even(3000, 0))) "Yeah" else "Neh"
 }
